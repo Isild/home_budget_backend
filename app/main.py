@@ -2,15 +2,19 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException, Request, status, Response
 from sqlalchemy.orm import Session
 from uuid import UUID  
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import time
 
 from . import crud
 from .database import SessionLocal, engine
-from .schemas import userSchemas, expenditureSchemas
+from .schemas import userSchemas, expenditureSchemas, userTokenSchemas
 from .models import userModel, expenditureModel
 
 userModel.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Dependency
 def get_db():
@@ -20,12 +24,54 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
+# middleware
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+
+# app
+@app.get("/", tags=["app"])
 def read_root(request: Request):
     return {
         "version": "v0.1",
         "documentation": request.client.host + "/docs"
     }
+
+# auth 
+async def get_current_active_user(token: str = Depends(oauth2_scheme)):
+    db = next(get_db())
+    return crud.get_current_user(db=db, token=token)
+    
+@app.post("/login", response_model=userTokenSchemas.TokenData, tags=["auth"])
+def login(form_data: OAuth2PasswordRequestForm = Depends(),  db: Session = Depends(get_db)):
+    # in request form username will be a email
+    userDB = crud.get_user_by_email(db, email=form_data.username)
+    unauth_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    if not userDB:
+        raise unauth_error
+
+    if not crud.authenticate_user(db=db, user=userDB, password=form_data.password):
+        raise unauth_error
+
+    token = crud.generate_user_token(db, user=userDB)
+
+    return {
+        "access_token": token, 
+        "token_type": "bearer"
+    }
+
+@app.get("/users/me", response_model=userSchemas.UserPublic, tags=["auth"])
+def red_user_me(current_user: userSchemas.UserPublic = Depends(get_current_active_user)):
+    return current_user
 
 # users
 @app.post("/users/", response_model=userSchemas.User, status_code=status.HTTP_201_CREATED, tags=["users"])
@@ -162,3 +208,5 @@ def __get_auth_user():
     mockUser = UserAuthMock()
 
     return mockUser
+
+    

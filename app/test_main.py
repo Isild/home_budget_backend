@@ -167,6 +167,11 @@ def test_delete_user_not_found(test_db):
 
     assert response.status_code == 404
 
+def test_get_user_me(test_db):
+    response = client.get("/users/me")
+    
+    assert response.status_code == 401
+
 # expenditures
 def test_post_expenditure(test_db):
     user = client.post(
