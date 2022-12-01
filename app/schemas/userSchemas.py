@@ -6,9 +6,13 @@ from .expenditureSchemas import Expenditure
 class UserBase(BaseModel):
     email: str
 
+class UserRegister(UserBase):
+    password:str
 
-class UserCreate(UserBase):
-    password: str
+class UserResetPassword(UserRegister):
+    new_password:str
+
+class UserCreate(UserRegister):
     is_admin: bool
     is_active: bool
 

@@ -14,7 +14,6 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 Base.metadata.create_all(bind=engine)
 
 @fixture()
@@ -34,6 +33,8 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
+version :str = "/v0"
+
 ### Tests ###
 
 def test_read_main(test_db):
@@ -43,7 +44,7 @@ def test_read_main(test_db):
 # user tests
 def test_post_user(test_db):
     response = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -63,7 +64,7 @@ def test_post_user(test_db):
 
 def test_post_user_duplicated_email(test_db):
     client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -72,7 +73,7 @@ def test_post_user_duplicated_email(test_db):
         }
     )
     response = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -85,14 +86,14 @@ def test_post_user_duplicated_email(test_db):
     assert response.status_code == 400
 
 def test_get_users_empty(test_db):
-    response = client.get("/users/")
+    response = client.get(version + "/users/")
     
     assert response.status_code == 200
     assert response.json() == []
 
 def test_get_users(test_db):
     user1 = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -101,7 +102,7 @@ def test_get_users(test_db):
         }
     )
     user2 = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email2@w.x",
             "is_active":True,
@@ -109,7 +110,7 @@ def test_get_users(test_db):
             "password":"password"
         }
     )
-    response = client.get("/users/")
+    response = client.get(version + "/users/")
     
     assert response.status_code == 200
     assert response.json() == [
@@ -119,7 +120,7 @@ def test_get_users(test_db):
 
 def test_get_user(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -128,7 +129,7 @@ def test_get_user(test_db):
         }
     ).json()
 
-    response = client.get("/users/"+ user['uuid'])
+    response = client.get(version + "/users/"+ user['uuid'])
 
     data = response.json()
     assert response.status_code == 200
@@ -141,13 +142,13 @@ def test_get_user(test_db):
     assert not "password" in data
 
 def test_get_user_not_found(test_db):
-    response = client.get("/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    response = client.get(version + "/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
     assert response.status_code == 404
 
 def test_delete_user(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -156,26 +157,26 @@ def test_delete_user(test_db):
         }
     ).json()
 
-    response = client.delete("/users/"+ user['uuid'])
+    response = client.delete(version + "/users/"+ user['uuid'])
     assert response.status_code == 204
     
-    response = client.get("/users/"+ user['uuid'])
+    response = client.get(version + "/users/"+ user['uuid'])
     assert response.status_code == 404
 
 def test_delete_user_not_found(test_db):
-    response = client.delete("/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    response = client.delete(version + "/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
     assert response.status_code == 404
 
 def test_get_user_me(test_db):
-    response = client.get("/users/me")
+    response = client.get("auth/users/me")
     
     assert response.status_code == 401
 
 # expenditures
 def test_post_expenditure(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -185,7 +186,7 @@ def test_post_expenditure(test_db):
     ).json()
 
     response = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -209,7 +210,7 @@ def test_post_expenditure(test_db):
 
 def test_get_expenditure(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -218,7 +219,7 @@ def test_get_expenditure(test_db):
         }
     ).json()
     expenditure = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -230,7 +231,7 @@ def test_get_expenditure(test_db):
         }
     ).json()
 
-    response = client.get("/expenditures/"+ expenditure['uuid'])
+    response = client.get(version + "/expenditures/"+ expenditure['uuid'])
 
     data = response.json()
     assert response.status_code == 200
@@ -243,7 +244,7 @@ def test_get_expenditure(test_db):
 
 def test_get_expenditure_not_found(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -252,7 +253,7 @@ def test_get_expenditure_not_found(test_db):
         }
     ).json()
     expenditure = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -264,14 +265,14 @@ def test_get_expenditure_not_found(test_db):
         }
     ).json()
 
-    response = client.get("/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    response = client.get(version + "/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
     data = response.json()
     assert response.status_code == 404
 
 def test_get_expenditures(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -280,7 +281,7 @@ def test_get_expenditures(test_db):
         }
     ).json()
     expenditure1 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -292,7 +293,7 @@ def test_get_expenditures(test_db):
         }
     )
     expenditure2 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -304,7 +305,7 @@ def test_get_expenditures(test_db):
         }
     )
 
-    response = client.get("/expenditures/")
+    response = client.get(version + "/expenditures/")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -314,7 +315,7 @@ def test_get_expenditures(test_db):
 
 def test_get_expenditures_filter_by_user(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -323,7 +324,7 @@ def test_get_expenditures_filter_by_user(test_db):
         }
     ).json()
     expenditure1 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -335,7 +336,7 @@ def test_get_expenditures_filter_by_user(test_db):
         }
     )
     expenditure2 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -347,7 +348,7 @@ def test_get_expenditures_filter_by_user(test_db):
         }
     )
 
-    response = client.get("/users/" + user['uuid'] + "/expenditures/")
+    response = client.get(version + "/users/" + user['uuid'] + "/expenditures/")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -358,7 +359,7 @@ def test_get_expenditures_filter_by_user(test_db):
 
 def test_get_expenditures_filter_by_user_not_found(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -367,7 +368,7 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
         }
     ).json()
     expenditure1 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -379,7 +380,7 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
         }
     )
     expenditure2 = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -391,13 +392,13 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
         }
     )
 
-    response = client.get("/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/expenditures/")
+    response = client.get(version + "/users/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/expenditures/")
 
     assert response.status_code == 404
 
 def test_put_expenditure(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -406,7 +407,7 @@ def test_put_expenditure(test_db):
         }
     ).json()
     expenditureBeforeUpdate = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -418,7 +419,7 @@ def test_put_expenditure(test_db):
         }
     ).json()
     response = client.put(
-        "/expenditures/" + expenditureBeforeUpdate['uuid'],
+        version + "/expenditures/" + expenditureBeforeUpdate['uuid'],
         json={
             "name":"name1",
             "cost":1.21,
@@ -428,7 +429,7 @@ def test_put_expenditure(test_db):
     )
     assert response.status_code == 204
 
-    response = client.get("/expenditures/"+ expenditureBeforeUpdate['uuid'])
+    response = client.get(version + "/expenditures/"+ expenditureBeforeUpdate['uuid'])
 
     expenditureAfterUpdate = response.json()
     assert expenditureBeforeUpdate['uuid'] == expenditureAfterUpdate['uuid']
@@ -439,7 +440,7 @@ def test_put_expenditure(test_db):
 
 def test_put_expenditure_not_found(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -448,7 +449,7 @@ def test_put_expenditure_not_found(test_db):
         }
     ).json()
     expenditureBeforeUpdate = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -460,7 +461,7 @@ def test_put_expenditure_not_found(test_db):
         }
     ).json()
     response = client.put(
-        "/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        version + "/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         json={
             "name":"name1",
             "cost":1.21,
@@ -472,7 +473,7 @@ def test_put_expenditure_not_found(test_db):
 
 def test_delete_expenditure(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -481,7 +482,7 @@ def test_delete_expenditure(test_db):
         }
     ).json()
     expenditure = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -493,15 +494,15 @@ def test_delete_expenditure(test_db):
         }
     ).json()
 
-    response = client.delete("/expenditures/"+ expenditure['uuid'])
+    response = client.delete(version + "/expenditures/"+ expenditure['uuid'])
     assert response.status_code == 204
     
-    response = client.get("/expenditures/"+ expenditure['uuid'])
+    response = client.get(version + "/expenditures/"+ expenditure['uuid'])
     assert response.status_code == 404
 
 def test_delete_expenditure_not_found(test_db):
     user = client.post(
-        "/users/",
+        version + "/users/",
         json={
             "email":"email@w.x",
             "is_active":True,
@@ -510,7 +511,7 @@ def test_delete_expenditure_not_found(test_db):
         }
     ).json()
     expenditure = client.post(
-        "/expenditures/",
+        version + "/expenditures/",
         params={
             "user_uuid":user['uuid']
         },
@@ -522,5 +523,5 @@ def test_delete_expenditure_not_found(test_db):
         }
     ).json()
 
-    response = client.delete("/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    response = client.delete(version + "/expenditures/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
     assert response.status_code == 404
