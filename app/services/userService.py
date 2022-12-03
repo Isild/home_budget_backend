@@ -5,6 +5,7 @@ from jose import jwt
 
 from ..models import userModel
 from ..schemas import userSchemas
+from ..dependencies import get_settings
 
 from . import authService
 
@@ -21,8 +22,13 @@ def get_user_by_token(db: Session, token: str):
     return db.query(userModel.UserModel).filter(userModel.UserModel.token == token).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(userModel.UserModel).offset(skip).limit(limit).all()
+def get_users(db: Session, skip: int = 0, limit: int = 100, search: str = None):
+    query = db.query(userModel.UserModel)
+
+    if search:
+        query = query.filter(userModel.UserModel.email.contains(search))
+
+    return query.offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: userSchemas.User):
     hashed_password = authService.get_hashed_password(user.password)
@@ -44,6 +50,14 @@ def create_user(db: Session, user: userSchemas.User):
 def change_user_password(db:Session, user: userSchemas.User, new_password: str):
     hashed_password = authService.get_hashed_password(new_password)
     db.query(userModel.UserModel).filter(userModel.UserModel.id == user.id).update({"password": hashed_password})
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+def remove_user_token(db:Session, user: userSchemas.User):
+    db.query(userModel.UserModel).filter(userModel.UserModel.id == user.id).update({"token": None})
 
     db.commit()
     db.refresh(user)
@@ -73,8 +87,9 @@ def get_current_user(db: Session, token: str):
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    print(jwt.decode(token, get_settings().secret_key, algorithms=[get_settings().algorithm]))
     try:
-        payload = jwt.decode(token, authService.SECRET_KEY, algorithms=[authService.ALGORITHM])
+        payload = jwt.decode(token, get_settings().secret_key, algorithms=[get_settings().algorithm])
     except:
         raise token_exception
 
@@ -107,4 +122,3 @@ def send_password_reset_email(email: str):
     print("Email sent")
 
     return True
-

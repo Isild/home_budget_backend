@@ -34,8 +34,8 @@ def create_user(user: userSchemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[userSchemas.User], status_code=status.HTTP_200_OK, tags=["users"])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = userService.get_users(db, skip=skip, limit=limit)
+def read_users(skip: int = 0, limit: int = 100, search:str = None, db: Session = Depends(get_db)):
+    users = userService.get_users(db, skip=skip, limit=limit, search=search)
     return users
 
 

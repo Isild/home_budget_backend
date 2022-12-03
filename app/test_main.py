@@ -174,6 +174,7 @@ def test_get_user_me(test_db):
     assert response.status_code == 401
 
 # expenditures
+## add tests for search and date filters
 def test_post_expenditure(test_db):
     user = client.post(
         version + "/users/",
@@ -193,7 +194,7 @@ def test_post_expenditure(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -203,7 +204,7 @@ def test_post_expenditure(test_db):
     assert response.status_code == 201
     assert data["name"] == "name"
     assert data["cost"] == 1.2
-    assert data["date"] == "2008-09-15T15:53:00"
+    assert data["date"] == "2008-09-15"
     assert data["place"] == "place"
     assert "uuid" in data
     assert not "id" in data
@@ -226,7 +227,7 @@ def test_get_expenditure(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()
@@ -260,7 +261,7 @@ def test_get_expenditure_not_found(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()
@@ -288,7 +289,7 @@ def test_get_expenditures(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -300,7 +301,7 @@ def test_get_expenditures(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -331,7 +332,7 @@ def test_get_expenditures_filter_by_user(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -343,7 +344,7 @@ def test_get_expenditures_filter_by_user(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -375,7 +376,7 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -387,7 +388,7 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     )
@@ -414,7 +415,7 @@ def test_put_expenditure(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()
@@ -423,7 +424,7 @@ def test_put_expenditure(test_db):
         json={
             "name":"name1",
             "cost":1.21,
-            "date":"2008-09-16T15:53:00+05:00",
+            "date":"2008-09-16",
             "place":"place1"
         }
     )
@@ -456,7 +457,7 @@ def test_put_expenditure_not_found(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()
@@ -465,7 +466,7 @@ def test_put_expenditure_not_found(test_db):
         json={
             "name":"name1",
             "cost":1.21,
-            "date":"2008-09-16T15:53:00+05:00",
+            "date":"2008-09-16",
             "place":"place1"
         }
     )
@@ -489,7 +490,7 @@ def test_delete_expenditure(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()
@@ -518,7 +519,7 @@ def test_delete_expenditure_not_found(test_db):
         json={
             "name":"name",
             "cost":1.2,
-            "date":"2008-09-15T15:53:00+05:00",
+            "date":"2008-09-15",
             "place":"place"
         }
     ).json()

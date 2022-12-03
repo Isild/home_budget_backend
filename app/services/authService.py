@@ -10,7 +10,6 @@ from ..schemas import userSchemas, expenditureSchemas, userTokenSchemas
 from . import userService
 from ..dependencies import oauth2_scheme, get_db, get_settings
 
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # auth   
@@ -81,3 +80,6 @@ def generate_user_token(db: Session, user: userModel.UserModel):
 async def get_current_active_user(token: str = Depends(oauth2_scheme)):
     db = next(get_db())
     return userService.get_current_user(db=db, token=token)
+
+def delete_token(db: Session, user: userModel.UserModel):
+    userService.remove_user_token(db=db, user=user)

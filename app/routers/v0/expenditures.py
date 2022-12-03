@@ -2,6 +2,8 @@ from typing import List
 from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy.orm import Session
 from uuid import UUID  
+from datetime import date, datetime
+
 
 from ...services import exposureService, userService
 from ...schemas import expenditureSchemas
@@ -30,11 +32,11 @@ def store_expenditure(
     return exposureService.post_expenditure(db=db, expenditure=expenditure, user_id=db_user.id)
 
 @router.get("/expenditures/", response_model=List[expenditureSchemas.Expenditure], status_code=status.HTTP_200_OK, tags=["expenditures"])
-def index_expenditures(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def index_expenditures(skip: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
     loggedUser = __get_auth_user()
 
     if loggedUser.is_admin:
-        expendiures = exposureService.get_expenditures(db, skip=skip, limit=limit)
+        expendiures = exposureService.get_expenditures(db, skip=skip, limit=limit, search=search, date_from=date_from, date_to=date_to)
     else:
         raise httpExceptions.permission_denied_error
 

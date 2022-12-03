@@ -13,7 +13,7 @@ class UserModel(Base):
     password = Column(String)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-    token = Column(String, unique=True, default=None)
+    token = Column(String, unique=True, default=None, nullable=True)
     disabled = Column(Boolean, default=False)
 
     expenditures = relationship("ExpenditureModel", back_populates="owner")

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Float
 from sqlalchemy.orm import relationship
 from enum import Enum
 
@@ -16,7 +16,7 @@ class ExpenditureModel(Base):
     uuid = Column(String, unique=True, index=True)
     name = Column(String)
     cost = Column(Float)
-    date = Column(DateTime)
+    date = Column(Date)
     place = Column(String)
     # type = Column(Enum(ExpenditureTypes), default=ExpenditureTypes.normal)
     owner_id = Column(Integer, ForeignKey("users.id"))

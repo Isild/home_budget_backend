@@ -2,7 +2,7 @@ from typing import List, Union
 
 from pydantic import BaseModel, Field
 from uuid import UUID
-from datetime import datetime
+from datetime import date as date_type
 
 from ..models.expenditureModel import ExpenditureTypes
 
@@ -27,7 +27,7 @@ class ExpenditureBase(BaseModel):
         eq=0,
         example=21.37,
     )
-    date: datetime = Field(
+    date: date_type = Field(
         title="The date of the expenditure",
         description="The date of the expenditure",
         example="2022-11-06",

@@ -37,6 +37,12 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(),  db: Session = Depen
         "token_type": "bearer"
     }
 
+@router.post("/logout", status_code=200, tags=["auth"])
+def logout(user = Depends(authService.get_current_active_user), db: Session = Depends(get_db)):
+    authService.delete_token(db=db, user=user)
+
+    return "Successfully logged out."
+
 @router.post("/register", response_model=successSchemas.SuccessResponseSchema, status_code=status.HTTP_201_CREATED, tags=["auth"])
 def register(user_data: userSchemas.UserRegister, db: Session = Depends(get_db)):
     db_user = userService.get_user_by_email(db, email=user_data.email)
@@ -80,5 +86,5 @@ def change_password(user: userSchemas.UserResetPassword, db: Session = Depends(g
         raise httpExceptions.server_error
 
 @router.get("/users/me", response_model=userSchemas.UserPublic, tags=["auth"])
-def red_user_me(current_user: userSchemas.UserPublic = Depends(authService.get_current_active_user)):
+def red_user_me(current_user: userSchemas.User = Depends(authService.get_current_active_user)):
     return current_user
