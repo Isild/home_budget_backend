@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
 import time
 
 from .database import SessionLocal, engine
@@ -8,6 +9,7 @@ from .routers import auth
 from .routers.v0 import users, expenditures
 from .dependencies import get_db
 from .services import authService
+from .config import cors
 
 userModel.Base.metadata.create_all(bind=engine)
 
@@ -21,6 +23,14 @@ async def add_process_time_header(request: Request, call_next):
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
     return response
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors.origins,
+    allow_credentials=True,
+    allow_methods=cors.allow_methods,
+    allow_headers=cors.allow_headers,
+)
 
 # app
 @app.get("/", tags=["app"])
