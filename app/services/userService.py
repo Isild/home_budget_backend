@@ -60,7 +60,6 @@ def remove_user_token(db:Session, user: userSchemas.User):
     db.query(userModel.UserModel).filter(userModel.UserModel.id == user.id).update({"token": None})
 
     db.commit()
-    db.refresh(user)
 
     return user
 

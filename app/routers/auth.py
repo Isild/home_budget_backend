@@ -37,11 +37,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(),  db: Session = Depen
         "token_type": "bearer"
     }
 
-@router.post("/logout", status_code=200, tags=["auth"])
+@router.post("/logout", response_model=successSchemas.SuccessResponseSchema, status_code=200, tags=["auth"])
 def logout(user = Depends(authService.get_current_active_user), db: Session = Depends(get_db)):
     authService.delete_token(db=db, user=user)
 
-    return "Successfully logged out."
+    return {
+        "message": "Successfully logged out."
+    }
 
 @router.post("/register", response_model=successSchemas.SuccessResponseSchema, status_code=status.HTTP_201_CREATED, tags=["auth"])
 def register(user_data: userSchemas.UserRegister, db: Session = Depends(get_db)):
