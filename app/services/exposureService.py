@@ -21,8 +21,19 @@ def get_expenditures(db: Session, skip: int = 0, limit: int = 100, search: str =
 
     return query.offset(skip).limit(limit).all()
 
-def get_expenditures_filter_by_owner_id(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(expenditureModel.ExpenditureModel).filter(expenditureModel.ExpenditureModel.owner_id== user_id).offset(skip).limit(limit).all()
+def get_expenditures_filter_by_owner_id(db: Session, user_id: int, skip: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None):
+    query = db.query(expenditureModel.ExpenditureModel).filter(expenditureModel.ExpenditureModel.owner_id== user_id)
+
+    if search:
+        query = query.filter(or_(expenditureModel.ExpenditureModel.name.contains(search), expenditureModel.ExpenditureModel.place.contains(search)))
+
+    if date_from:
+        query = query.filter(expenditureModel.ExpenditureModel.date >= date_from)
+
+    if date_to:
+        query = query.filter(expenditureModel.ExpenditureModel.date <= date_to)
+
+    return query.offset(skip).limit(limit).all()
 
 # dodać zwracane typy
 def get_expenditure(db: Session, uuid: str, user_id: int):# -> expenditureModel.ExpenditureModel:

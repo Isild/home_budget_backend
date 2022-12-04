@@ -58,7 +58,7 @@ def index_expenditures(user_uuid: UUID, skip: int = 0, limit: int = 100, db: Ses
     return expendiures
 
 @router.get("/expenditures/{uuid}", response_model=expenditureSchemas.Expenditure, status_code=status.HTTP_200_OK, tags=["expenditures"])
-def show_expenditure(uuid: UUID, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def show_expenditure(uuid: UUID, db: Session = Depends(get_db)):
     loggedUser = __get_auth_user()
 
     expenditure = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
