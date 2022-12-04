@@ -6,7 +6,7 @@ from .database import SessionLocal, engine
 from .schemas import userSchemas, expenditureSchemas, userTokenSchemas
 from .models import userModel, expenditureModel
 from .routers import auth
-from .routers.v0 import users, expenditures
+from .routers.v0 import users, expenditures, expenditureDayStats
 from .dependencies import get_db
 from .services import authService
 from .config import cors
@@ -46,6 +46,11 @@ app.include_router(
 )
 app.include_router(
     expenditures.router,
+    prefix="/v0",
+    # dependencies=[Depends(authService.get_current_active_user)]
+)
+app.include_router(
+    expenditureDayStats.router,
     prefix="/v0",
     # dependencies=[Depends(authService.get_current_active_user)]
 )

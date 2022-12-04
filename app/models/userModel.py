@@ -17,3 +17,4 @@ class UserModel(Base):
     disabled = Column(Boolean, default=False)
 
     expenditures = relationship("ExpenditureModel", back_populates="owner")
+    expenditures_day_stats = relationship("ExpendituresDayStat", back_populates="owner")
