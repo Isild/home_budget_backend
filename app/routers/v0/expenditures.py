@@ -1,15 +1,16 @@
 from typing import List
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import Depends, HTTPException, status, APIRouter, BackgroundTasks
 from sqlalchemy.orm import Session
 from uuid import UUID  
 from datetime import date, datetime
+import asyncio
 
-
-from ...services import exposureService, userService
-from ...schemas import expenditureSchemas
-
+from ...services import exposureService, userService, expendituresDayStatService
+from ...schemas import expenditureSchemas, expendituresDayStatSchemas
 from ...dependencies import get_db, UserAuthMock, get_settings
 from ...exceptions import httpExceptions
+from ...jobs import expenditureJobs
+from ...models import expendituresDayStatModel
 
 router = APIRouter(
     responses={
@@ -21,15 +22,35 @@ router = APIRouter(
 
 # expenditures
 @router.post("/expenditures/", response_model=expenditureSchemas.Expenditure, status_code=status.HTTP_201_CREATED, tags=["expenditures"])
-def store_expenditure(
-    user_uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, db: Session = Depends(get_db)
+async def store_expenditure(
+     background_task: BackgroundTasks, user_uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, db: Session = Depends(get_db)
 ):
     db_user = userService.get_user(db=db, uuid=str(user_uuid))
 
     if db_user is None:
         raise httpExceptions.user_not_found_error
 
-    return exposureService.post_expenditure(db=db, expenditure=expenditure, user_id=db_user.id)
+    createdExpenditure = exposureService.post_expenditure(db=db, expenditure=expenditure, user_id=db_user.id)
+
+    background_task.add_task(expenditureJobs.recalculateDayExpenditures, db=db, user_id=db_user.id, expenditure=createdExpenditure)
+
+    return createdExpenditure
+
+@router.put("/expenditures/{uuid}", status_code=status.HTTP_204_NO_CONTENT, tags=["expenditures"])
+def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, background_task: BackgroundTasks, db: Session = Depends(get_db)):
+    loggedUser = __get_auth_user()
+
+    expenditureDB = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
+    if expenditureDB is None:
+        raise httpExceptions.expenditure_not_found
+    if expenditureDB.owner_id is not loggedUser.id:
+        raise httpExceptions.permission_denied_error
+
+    expenditure = exposureService.put_expenditure(db, expenditureDb=expenditureDB, expenditure=expenditure)
+
+    background_task.add_task(expenditureJobs.recalculateDayExpenditures, db=db, user_id=loggedUser.id, expenditure=expenditure)
+
+    return None
 
 @router.get("/expenditures/", response_model=List[expenditureSchemas.Expenditure], status_code=status.HTTP_200_OK, tags=["expenditures"])
 def index_expenditures(skip: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
@@ -69,20 +90,6 @@ def show_expenditure(uuid: UUID, db: Session = Depends(get_db)):
         raise httpExceptions.permission_denied_error
 
     return expenditure
-
-@router.put("/expenditures/{uuid}", status_code=status.HTTP_204_NO_CONTENT, tags=["expenditures"])
-def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
-
-    expenditureDB = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
-    if expenditureDB is None:
-        raise httpExceptions.expenditure_not_found
-    if expenditureDB.owner_id is not loggedUser.id:
-        raise httpExceptions.permission_denied_error
-
-    expenditure = exposureService.put_expenditure(db, expenditureDb=expenditureDB, expenditure=expenditure)
-
-    return None
 
 @router.delete("/expenditures/{uuid}", status_code=status.HTTP_204_NO_CONTENT, tags=["expenditures"])
 def delete_expenditure(uuid: UUID, db: Session = Depends(get_db)):

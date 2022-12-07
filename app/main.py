@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+
 import time
 
 from .database import SessionLocal, engine
@@ -35,6 +36,7 @@ app.add_middleware(
 # app
 @app.get("/", tags=["app"])
 def read_root(request: Request):
+
     return {
         "version": "v0.2",
         "documentation": request.client.host + "/docs"
