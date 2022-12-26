@@ -3,7 +3,7 @@ from typing import Union
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from ..models import userModel
 from ..schemas import userSchemas, expenditureSchemas, userTokenSchemas
@@ -78,8 +78,17 @@ def generate_user_token(db: Session, user: userModel.UserModel):
     return token
 
 async def get_current_active_user(token: str = Depends(oauth2_scheme)):
+# async def get_current_active_user(request: Request = Depends(Request), token: str = Depends(oauth2_scheme)):
     db = next(get_db())
-    return userService.get_current_user(db=db, token=token)
+    user = userService.get_current_user(db=db, token=token)
+    
+    return user
+
+# def get_user_from_request(request: Request = Depends(Request)):
+#     if request.user is not None:
+#         return request.user
+        
+#     return get_current_active_user()
 
 def delete_token(db: Session, user: userModel.UserModel):
     userService.remove_user_token(db=db, user=user)

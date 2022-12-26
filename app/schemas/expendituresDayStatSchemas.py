@@ -24,3 +24,22 @@ class ExpendituresDayStat(ExpendituresDayStatBase):
 
     class Config:
         orm_mode = True
+
+    
+class Pagination(BaseModel):
+    data: List[ExpendituresDayStat] = Field(
+        title="The expenditure stats data",
+        description="The expenditure stats data.",
+    )
+    page: int = Field(
+        title="The total pages amount",
+        description="The total pages amount.",
+    )
+    last_page: int = Field(
+        title="The last page number",
+        description="The last page number of pagination.",
+    )
+    limit: int = Field(
+        title="The limit of displaying data",
+        description="The limit of displaying data.",
+    )

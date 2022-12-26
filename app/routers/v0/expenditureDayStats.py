@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy.orm import Session
 from uuid import UUID  
 from datetime import date, datetime
+import math
 
 from ...services import exposureService, userService, expendituresDayStatService
 from ...schemas import expendituresDayStatSchemas
@@ -18,9 +19,8 @@ router = APIRouter(
     },
 )
 
-# @router.get("/users/{user_uuid}/expenditures-day-stats/", response_model=List[expendituresDayStatSchemas.ExpendituresDayStat], status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
-@router.get("/users/{user_uuid}/expenditures-day-stats/", status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
-def index_expenditures_day_stats(user_uuid: UUID, skip: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, group_by: str = None, db: Session = Depends(get_db)):
+@router.get("/users/{user_uuid}/expenditures-day-stats/", response_model=expendituresDayStatSchemas.Pagination, status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
+def index_expenditures_day_stats(user_uuid: UUID, page: int = 1, limit: int = 100, date_from: date = None, date_to: date = None, group_by: str = None, db: Session = Depends(get_db)):
     loggedUser = __get_auth_user()
     userPath = userService.get_user(db, uuid=str(user_uuid))
 
@@ -29,9 +29,12 @@ def index_expenditures_day_stats(user_uuid: UUID, skip: int = 0, limit: int = 10
     if not loggedUser.id == userPath.id:
         raise httpExceptions.permission_denied_error
 
-    expendiures_day_stats = expendituresDayStatService.get_expenditures_day_stats(db=db, user_id=userPath.id, skip=skip, limit=limit, search=search, date_from=date_from, date_to=date_to, group_by=group_by)
+    expendiures_day_stats = expendituresDayStatService.get_expenditures_day_stats(db=db, user_id=userPath.id, page=page, limit=limit, search=None, date_from=date_from, date_to=date_to, group_by=group_by)
+    
+    amount = expendituresDayStatService.get_expenditure_day_stats_amount(db,user_id=userPath.id)
+    last_page = math.ceil(amount/limit)
 
-    return expendiures_day_stats
+    return expendituresDayStatSchemas.Pagination(data=expendiures_day_stats, page=page, last_page=last_page, limit=limit)
 
 @router.get("/expenditures-day-stats/{uuid}", response_model=expendituresDayStatSchemas.ExpendituresDayStat, status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
 def show_expenditure_day_stat(uuid: UUID, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

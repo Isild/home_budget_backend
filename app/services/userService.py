@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from uuid import uuid4
 from fastapi import HTTPException, status
 from jose import jwt
+from sqlalchemy import func, desc
 
 from ..models import userModel
 from ..schemas import userSchemas
@@ -22,13 +23,15 @@ def get_user_by_token(db: Session, token: str):
     return db.query(userModel.UserModel).filter(userModel.UserModel.token == token).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100, search: str = None):
+def get_users(db: Session, page: int = 1, limit: int = 100, search: str = None):
     query = db.query(userModel.UserModel)
+
+    query = query.order_by(desc(userModel.UserModel.email))
 
     if search:
         query = query.filter(userModel.UserModel.email.contains(search))
 
-    return query.offset(skip).limit(limit).all()
+    return query.offset((page - 1) * limit).limit(limit).all()
 
 def create_user(db: Session, user: userSchemas.User):
     hashed_password = authService.get_hashed_password(user.password)
@@ -86,7 +89,6 @@ def get_current_user(db: Session, token: str):
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    print(jwt.decode(token, get_settings().secret_key, algorithms=[get_settings().algorithm]))
     try:
         payload = jwt.decode(token, get_settings().secret_key, algorithms=[get_settings().algorithm])
     except:
@@ -121,3 +123,8 @@ def send_password_reset_email(email: str):
     print("Email sent")
 
     return True
+
+def get_users_amount(db: Session) -> int:
+    query = db.query(userModel.UserModel)
+
+    return query.with_entities(func.count()).scalar()

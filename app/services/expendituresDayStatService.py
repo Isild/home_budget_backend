@@ -6,18 +6,22 @@ from sqlalchemy import func
 from ..models import expendituresDayStatModel
 from ..schemas import expendituresDayStatSchemas
 
-def get_expenditures_day_stats(db: Session, user_id: int = None, skip: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, group_by: str = None):
+model = expendituresDayStatModel.ExpendituresDayStat
+
+def get_expenditures_day_stats(db: Session, user_id: int = None, page: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, group_by: str = None):
 
     if group_by:
         query = db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost).label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id)
     else:
         query = db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id)
 
+    query = query.order_by(expendituresDayStatModel.ExpendituresDayStat.date)
+
     if user_id:
         query = query.filter(expendituresDayStatModel.ExpendituresDayStat.owner_id == user_id)
 
-    if search:
-        query = query.filter(expendituresDayStatModel.ExpendituresDayStat.total_cost.match(search))
+    # if search:
+    #     query = query.filter(expendituresDayStatModel.ExpendituresDayStat.total_cost.match(search))
 
     if date_from:
         query = query.filter(expendituresDayStatModel.ExpendituresDayStat.date >= date_from)
@@ -25,7 +29,6 @@ def get_expenditures_day_stats(db: Session, user_id: int = None, skip: int = 0, 
     if date_to:
         query = query.filter(expendituresDayStatModel.ExpendituresDayStat.date <= date_to)
 
-    
     if group_by:
         if group_by == "day":
             query = query.group_by(expendituresDayStatModel.ExpendituresDayStat.date)
@@ -49,8 +52,7 @@ def get_expenditures_day_stats(db: Session, user_id: int = None, skip: int = 0, 
 
             return grouped_expenditures
 
-    # return query.offset(skip).limit(limit).order_by(expendituresDayStatModel.ExpendituresDayStat.date).all()
-    return query.offset(skip).limit(limit).all()
+    return query.offset((page-1) * limit).limit(limit).all()
 
 def get_expenditure_day_stat(db: Session, uuid: str):
     return db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.uuid == uuid).first()
@@ -83,3 +85,7 @@ def remove_expenditure_day_stat(db: Session, uuid: str) -> bool:
     db.commit()
 
     return uuid
+
+def get_expenditure_day_stats_amount(db: Session, user_id: int = None) -> int:
+    return db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost)\
+        .label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id).with_entities(func.count()).scalar()

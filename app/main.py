@@ -42,7 +42,6 @@ def read_root(request: Request):
         "documentation": request.client.host + "/docs"
     }
 
-
 app.include_router(
     auth.router,
 )

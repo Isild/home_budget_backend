@@ -1,11 +1,11 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Float
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Float, Enum
 from sqlalchemy.orm import relationship
-from enum import Enum
+from enum import Enum as py_enum
 
 from ..database import Base
 # from .userModel import 
 
-class ExpenditureTypes(Enum):
+class ExpenditureTypes(str, py_enum):
     normal = "normal"
     cyclical = "cyclical"
 
@@ -18,7 +18,7 @@ class ExpenditureModel(Base):
     cost = Column(Float)
     date = Column(Date)
     place = Column(String)
-    # type = Column(Enum(ExpenditureTypes), default=ExpenditureTypes.normal)
+    type = Column(Enum(ExpenditureTypes), default=ExpenditureTypes.normal)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("UserModel", back_populates="expenditures")

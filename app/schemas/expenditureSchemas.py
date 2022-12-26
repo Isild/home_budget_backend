@@ -14,13 +14,13 @@ class ExpenditureBase(BaseModel):
         max_length=300,
         example="Name",
     )
-    # type: ExpenditureTypes = Field(
-    #     title="The type of the expenditure", 
-    #     description="The type of the expenditure", 
-    #     min_length=3, 
-    #     max_length=300,
-    #     example=ExpenditureTypes.cyclical,
-    # )
+    type: ExpenditureTypes = Field(
+        title="The type of the expenditure", 
+        description="The type of the expenditure", 
+        min_length=3, 
+        max_length=300,
+        example=ExpenditureTypes.cyclical,
+    )
     cost: float = Field(
         title="The cost of the expenditure", 
         description="The cost of the expenditure", 
@@ -49,3 +49,21 @@ class Expenditure(ExpenditureBase):
 
     class Config:
         orm_mode = True
+
+class Pagination(BaseModel):
+    data: List[Expenditure] = Field(
+        title="The expenditure data",
+        description="The expenditure data.",
+    )
+    page: int = Field(
+        title="The total pages amount",
+        description="The total pages amount.",
+    )
+    last_page: int = Field(
+        title="The last page number",
+        description="The last page number of pagination.",
+    )
+    limit: int = Field(
+        title="The limit of displaying data",
+        description="The limit of displaying data.",
+    )

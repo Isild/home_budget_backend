@@ -2,6 +2,7 @@ from typing import List
 from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy.orm import Session
 from uuid import UUID 
+import math
 
 from ...services import userService
 from ...schemas import userSchemas
@@ -33,10 +34,14 @@ def create_user(user: userSchemas.UserCreate, db: Session = Depends(get_db)):
         raise httpExceptions.permission_denied_error
 
 
-@router.get("/", response_model=List[userSchemas.User], status_code=status.HTTP_200_OK, tags=["users"])
-def read_users(skip: int = 0, limit: int = 100, search:str = None, db: Session = Depends(get_db)):
-    users = userService.get_users(db, skip=skip, limit=limit, search=search)
-    return users
+@router.get("/", response_model=userSchemas.Pagination, status_code=status.HTTP_200_OK, tags=["users"])
+def read_users(page: int = 1, limit: int = 100, search:str = None, db: Session = Depends(get_db)):
+    users = userService.get_users(db, page=page, limit=limit, search=search)
+
+    amount = userService.get_users_amount(db)
+    last_page = math.ceil(amount/limit)
+
+    return userSchemas.Pagination(data=users, page=page, last_page=last_page, limit=limit)
 
 
 @router.get("/{user_uuid}", response_model=userSchemas.User, status_code=status.HTTP_200_OK, tags=["users"])

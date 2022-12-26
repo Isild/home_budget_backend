@@ -27,7 +27,8 @@ def override_get_db():
         db = TestingSessionLocal()
         yield db
     finally:
-        db.close()
+        print(1)
+        # db.close()
 
 app.dependency_overrides[get_db] = override_get_db
 
@@ -89,7 +90,12 @@ def test_get_users_empty(test_db):
     response = client.get(version + "/users/")
     
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {
+        'data': [],
+        'page': 1,
+        'last_page': 1,
+        'limit': 100
+    }
 
 def test_get_users(test_db):
     user1 = client.post(
@@ -112,11 +118,24 @@ def test_get_users(test_db):
     )
     response = client.get(version + "/users/")
     
+    user1Dict = user1.json()
+    user2Dict = user2.json()
+    del user1Dict['token']
+    del user1Dict['is_admin']
+    del user2Dict['token']
+    del user2Dict['is_admin']
+    
+
     assert response.status_code == 200
-    assert response.json() == [
-        user1.json(),
-        user2.json()
-    ]
+    assert response.json() == {
+        'data': [
+            user1Dict,
+            user2Dict
+        ],
+        'page': 1,
+        'last_page': 1,
+        'limit': 100
+    }
 
 def test_get_user(test_db):
     user = client.post(
@@ -137,7 +156,7 @@ def test_get_user(test_db):
     assert user['email'] == data['email']
     assert user['is_active'] == data['is_active']
     assert user['is_admin'] == data['is_admin']
-    assert user['expenditures'] == data['expenditures']
+    # assert user['expenditures'] == data['expenditures']
     assert not "id" in data
     assert not "password" in data
 
@@ -195,7 +214,8 @@ def test_post_expenditure(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
 
@@ -228,7 +248,8 @@ def test_get_expenditure(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     ).json()
 
@@ -262,7 +283,8 @@ def test_get_expenditure_not_found(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     ).json()
 
@@ -290,7 +312,8 @@ def test_get_expenditures(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
     expenditure2 = client.post(
@@ -302,17 +325,25 @@ def test_get_expenditures(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
 
     response = client.get(version + "/expenditures/")
+    expenditure1Dict = expenditure1.json()
+    expenditure2Dict = expenditure2.json()
 
     assert response.status_code == 200
-    assert response.json() == [
-        expenditure1.json(),
-        expenditure2.json()
-    ]
+    assert response.json() == {
+        'data': [
+            expenditure1Dict,
+            expenditure2Dict
+        ],
+        'page': 1,
+        'last_page': 1,
+        'limit': 100
+    }
 
 def test_get_expenditures_filter_by_user(test_db):
     user = client.post(
@@ -333,7 +364,8 @@ def test_get_expenditures_filter_by_user(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
     expenditure2 = client.post(
@@ -345,18 +377,26 @@ def test_get_expenditures_filter_by_user(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
 
     response = client.get(version + "/users/" + user['uuid'] + "/expenditures/")
 
-    assert response.status_code == 200
-    assert response.json() == [
-        expenditure1.json(),
-        expenditure2.json()
-    ]
+    expenditure1Dict = expenditure1.json()
+    expenditure2Dict = expenditure2.json()
 
+    assert response.status_code == 200
+    assert response.json() == {
+        'data': [
+            expenditure1Dict,
+            expenditure2Dict
+        ],
+        'page': 1,
+        'last_page': 1,
+        'limit': 100
+    }
 
 def test_get_expenditures_filter_by_user_not_found(test_db):
     user = client.post(
@@ -377,7 +417,8 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
     expenditure2 = client.post(
@@ -389,7 +430,8 @@ def test_get_expenditures_filter_by_user_not_found(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     )
 
@@ -416,7 +458,8 @@ def test_put_expenditure(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     ).json()
     response = client.put(
@@ -425,7 +468,8 @@ def test_put_expenditure(test_db):
             "name":"name1",
             "cost":1.21,
             "date":"2008-09-16",
-            "place":"place1"
+            "place":"place1",
+            "type":"normal"
         }
     )
     assert response.status_code == 204
@@ -458,7 +502,8 @@ def test_put_expenditure_not_found(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     ).json()
     response = client.put(
@@ -467,7 +512,8 @@ def test_put_expenditure_not_found(test_db):
             "name":"name1",
             "cost":1.21,
             "date":"2008-09-16",
-            "place":"place1"
+            "place":"place1",
+            "type":"normal"
         }
     )
     assert response.status_code == 404
@@ -491,7 +537,8 @@ def test_delete_expenditure(test_db):
             "name":"name",
             "cost":1.2,
             "date":"2008-09-15",
-            "place":"place"
+            "place":"place",
+            "type":"cyclical"
         }
     ).json()
 
