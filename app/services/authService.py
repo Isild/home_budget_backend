@@ -3,10 +3,9 @@ from typing import Union
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
-from fastapi import Depends, Request
+from fastapi import Depends
 
 from ..models import userModel
-from ..schemas import userSchemas, expenditureSchemas, userTokenSchemas
 from . import userService
 from ..dependencies import oauth2_scheme, get_db, get_settings
 

@@ -9,7 +9,6 @@ from ..schemas import expendituresDayStatSchemas
 model = expendituresDayStatModel.ExpendituresDayStat
 
 def get_expenditures_day_stats(db: Session, user_id: int = None, page: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, group_by: str = None):
-
     if group_by:
         query = db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost).label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id)
     else:

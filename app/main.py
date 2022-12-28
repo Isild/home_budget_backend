@@ -48,15 +48,12 @@ app.include_router(
 app.include_router(
     expenditures.router,
     prefix="/v0",
-    # dependencies=[Depends(authService.get_current_active_user)]
 )
 app.include_router(
     expenditureDayStats.router,
     prefix="/v0",
-    # dependencies=[Depends(authService.get_current_active_user)]
 )
 app.include_router(
     users.router,
     prefix="/v0",
-    # dependencies=[Depends(authService.get_current_active_user)]
 )

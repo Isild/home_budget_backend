@@ -1,7 +1,6 @@
-from typing import List, Union
+from typing import List
 
 from pydantic import BaseModel, Field
-from uuid import UUID
 from datetime import date as date_type
 
 from ..models.expendituresDayStatModel import ExpendituresDayStat

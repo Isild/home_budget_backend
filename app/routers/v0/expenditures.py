@@ -1,17 +1,15 @@
-from typing import List
-from fastapi import Depends, HTTPException, status, APIRouter, BackgroundTasks
+from fastapi import Depends, status, APIRouter, BackgroundTasks
 from sqlalchemy.orm import Session
 from uuid import UUID  
-from datetime import date, datetime
-import asyncio
+from datetime import date
 import math
 
-from ...services import exposureService, userService, expendituresDayStatService
-from ...schemas import expenditureSchemas, expendituresDayStatSchemas
-from ...dependencies import get_db, UserAuthMock, get_settings
+from ...services import exposureService, userService, authService
+from ...schemas import expenditureSchemas
+from ...dependencies import get_db, get_settings, oauth2_scheme
 from ...exceptions import httpExceptions
 from ...jobs import expenditureJobs
-from ...models import expendituresDayStatModel, expenditureModel
+from ...models import expenditureModel
 
 router = APIRouter(
     responses={
@@ -24,9 +22,9 @@ router = APIRouter(
 # expenditures
 @router.post("/expenditures/", response_model=expenditureSchemas.Expenditure, status_code=status.HTTP_201_CREATED, tags=["expenditures"])
 async def store_expenditure(
-     background_task: BackgroundTasks, user_uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, db: Session = Depends(get_db)
+     background_task: BackgroundTasks, expenditure: expenditureSchemas.ExpenditureCreate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ):
-    db_user = userService.get_user(db=db, uuid=str(user_uuid))
+    db_user = authService.decode_token(db=db, token=token)
 
     if db_user is None:
         raise httpExceptions.user_not_found_error
@@ -34,15 +32,15 @@ async def store_expenditure(
     if expenditure.type not in expenditureModel.ExpenditureTypes._value2member_map_:
         raise httpExceptions.validation_error
 
-    createdExpenditure = exposureService.post_expenditure(db=db, expenditure=expenditure, user_id=db_user.id)
+    createdExpenditure = exposureService.create_expenditure(db=db, expenditure=expenditure, user_id=db_user.id)
 
     background_task.add_task(expenditureJobs.recalculateDayExpenditures, db=db, user_id=db_user.id, expenditure=createdExpenditure)
 
     return createdExpenditure
 
 @router.put("/expenditures/{uuid}", status_code=status.HTTP_204_NO_CONTENT, tags=["expenditures"])
-def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, background_task: BackgroundTasks, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreate, background_task: BackgroundTasks, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
 
     expenditureDB = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
     if expenditureDB is None:
@@ -60,8 +58,8 @@ def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreat
     return None
 
 @router.get("/expenditures/", response_model=expenditureSchemas.Pagination, status_code=status.HTTP_200_OK, tags=["expenditures"])
-def index_expenditures(page: int = 1, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def index_expenditures(token: str = Depends(oauth2_scheme), page: int = 1, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
 
     if loggedUser.is_admin:
         expendiures = exposureService.get_expenditures(db, page=page, limit=limit, search=search, date_from=date_from, date_to=date_to)
@@ -74,8 +72,8 @@ def index_expenditures(page: int = 1, limit: int = 100, search: str = None, date
     return expenditureSchemas.Pagination(data=expendiures, page=page, last_page=last_page, limit=limit)
 
 @router.get("/users/{user_uuid}/expenditures/", response_model=expenditureSchemas.Pagination, status_code=status.HTTP_200_OK, tags=["expenditures"])
-def index_expenditures(user_uuid: UUID, page: int = 1, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def index_user_expenditures(user_uuid: UUID, token: str = Depends(oauth2_scheme), page: int = 1, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
     userPath = userService.get_user(db, uuid=str(user_uuid))
     
     if userPath is None:
@@ -96,8 +94,8 @@ def index_expenditures(user_uuid: UUID, page: int = 1, limit: int = 100, search:
     return expenditureSchemas.Pagination(data=expendiures, page=page, last_page=last_page, limit=limit)
 
 @router.get("/expenditures/{uuid}", response_model=expenditureSchemas.Expenditure, status_code=status.HTTP_200_OK, tags=["expenditures"])
-def show_expenditure(uuid: UUID, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def show_expenditure(uuid: UUID, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
 
     expenditure = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
 
@@ -109,8 +107,8 @@ def show_expenditure(uuid: UUID, db: Session = Depends(get_db)):
     return expenditure
 
 @router.delete("/expenditures/{uuid}", status_code=status.HTTP_204_NO_CONTENT, tags=["expenditures"])
-def delete_expenditure(uuid: UUID, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def delete_expenditure(uuid: UUID, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
 
     expenditureDB = exposureService.get_expenditure(db, uuid=str(uuid), user_id=loggedUser.id)
 
@@ -122,9 +120,3 @@ def delete_expenditure(uuid: UUID, db: Session = Depends(get_db)):
     exposureService.delete_expenditre(db, str(uuid))
 
     return None
-
-
-def __get_auth_user():
-    mockUser = UserAuthMock()
-
-    return mockUser

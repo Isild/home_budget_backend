@@ -53,7 +53,7 @@ def put_expenditure(db: Session, expenditureDb: expenditureModel.ExpenditureMode
 
     return expenditureDb
 
-def post_expenditure(db: Session, expenditure: expenditureSchemas.ExpenditureCreate, user_id: int):
+def create_expenditure(db: Session, expenditure: expenditureSchemas.ExpenditureCreate, user_id: int):
     uuid = str(uuid4())
 
     db_expenditure = expenditureModel.ExpenditureModel(**expenditure.dict(), owner_id=user_id, uuid=uuid)

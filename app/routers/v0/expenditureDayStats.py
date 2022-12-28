@@ -1,14 +1,13 @@
-from typing import List
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import Depends, status, APIRouter
 from sqlalchemy.orm import Session
 from uuid import UUID  
-from datetime import date, datetime
+from datetime import date
 import math
 
-from ...services import exposureService, userService, expendituresDayStatService
+from ...services import userService, expendituresDayStatService, authService
 from ...schemas import expendituresDayStatSchemas
 
-from ...dependencies import get_db, UserAuthMock, get_settings
+from ...dependencies import get_db, get_settings, oauth2_scheme
 from ...exceptions import httpExceptions
 
 router = APIRouter(
@@ -20,11 +19,13 @@ router = APIRouter(
 )
 
 @router.get("/users/{user_uuid}/expenditures-day-stats/", response_model=expendituresDayStatSchemas.Pagination, status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
-def index_expenditures_day_stats(user_uuid: UUID, page: int = 1, limit: int = 100, date_from: date = None, date_to: date = None, group_by: str = None, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def index_expenditures_day_stats(user_uuid: UUID, token: str = Depends(oauth2_scheme), page: int = 1, limit: int = 100, date_from: date = None, date_to: date = None, group_by: str = None, db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
     userPath = userService.get_user(db, uuid=str(user_uuid))
-
+    
     if userPath is None:
+        raise httpExceptions.user_not_found_error
+    if loggedUser is None:
         raise httpExceptions.user_not_found_error
     if not loggedUser.id == userPath.id:
         raise httpExceptions.permission_denied_error
@@ -37,8 +38,8 @@ def index_expenditures_day_stats(user_uuid: UUID, page: int = 1, limit: int = 10
     return expendituresDayStatSchemas.Pagination(data=expendiures_day_stats, page=page, last_page=last_page, limit=limit)
 
 @router.get("/expenditures-day-stats/{uuid}", response_model=expendituresDayStatSchemas.ExpendituresDayStat, status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
-def show_expenditure_day_stat(uuid: UUID, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    loggedUser = __get_auth_user()
+def show_expenditure_day_stat(uuid: UUID, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
 
     expenditure = expendituresDayStatService.get_expenditure_day_stat(db, uuid=str(uuid))
 
@@ -48,9 +49,3 @@ def show_expenditure_day_stat(uuid: UUID, skip: int = 0, limit: int = 100, db: S
         raise httpExceptions.permission_denied_error
 
     return expenditure
-
-
-def __get_auth_user():
-    mockUser = UserAuthMock()
-
-    return mockUser
