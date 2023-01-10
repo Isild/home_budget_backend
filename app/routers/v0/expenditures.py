@@ -51,7 +51,7 @@ def put_expenditure(uuid: UUID, expenditure: expenditureSchemas.ExpenditureCreat
     if expenditure.type not in expenditureModel.ExpenditureTypes._value2member_map_:
         raise httpExceptions.validation_error
 
-    expenditure = exposureService.put_expenditure(db, expenditureDb=expenditureDB, expenditure=expenditure)
+    expenditure = exposureService.update_expenditure(db, expenditureDb=expenditureDB, expenditure=expenditure)
 
     background_task.add_task(expenditureJobs.recalculateDayExpenditures, db=db, user_id=loggedUser.id, expenditure=expenditure)
 
