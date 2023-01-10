@@ -41,6 +41,9 @@ def index_expenditures_day_stats(user_uuid: UUID, token: str = Depends(oauth2_sc
 def show_expenditure_day_stat(uuid: UUID, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     loggedUser = authService.decode_token(db=db, token=token)
 
+    if loggedUser is None:
+        raise httpExceptions.unauth_error
+
     expenditure = expendituresDayStatService.get_expenditure_day_stat(db, uuid=str(uuid))
 
     if expenditure is None:
@@ -49,3 +52,19 @@ def show_expenditure_day_stat(uuid: UUID, token: str = Depends(oauth2_scheme), d
         raise httpExceptions.permission_denied_error
 
     return expenditure
+
+@router.get("/users/{user_uuid}/expenditures-day-stats/month-limit", response_model=expendituresDayStatSchemas.ExpendituresLimitBase, status_code=status.HTTP_200_OK, tags=["expenditures-day-stats"])
+def show_expenditures_month_limit(user_uuid: UUID, token: str = Depends(oauth2_scheme), year: int = None, db: Session = Depends(get_db)):
+    loggedUser = authService.decode_token(db=db, token=token)
+    userPath = userService.get_user(db, uuid=str(user_uuid))
+    
+    if userPath is None:
+        raise httpExceptions.user_not_found_error
+    if loggedUser is None:
+        raise httpExceptions.user_not_found_error
+    if not loggedUser.id == userPath.id:
+        raise httpExceptions.permission_denied_error
+
+    limit_data = expendituresDayStatService.get_month_limit_data(db=db, year=year, user_id=loggedUser.id)
+
+    return limit_data

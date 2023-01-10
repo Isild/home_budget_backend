@@ -5,9 +5,9 @@ import time
 
 from .database import SessionLocal, engine
 from .schemas import userSchemas, expenditureSchemas, userTokenSchemas
-from .models import userModel, expenditureModel
+from .models import userModel, expenditureModel, limitsModel
 from .routers import auth
-from .routers.v0 import users, expenditures, expenditureDayStats
+from .routers.v0 import users, expenditures, expenditureDayStats, limits
 from .dependencies import get_db
 from .services import authService
 from .config import cors
@@ -55,5 +55,9 @@ app.include_router(
 )
 app.include_router(
     users.router,
+    prefix="/v0",
+)
+app.include_router(
+    limits.router,
     prefix="/v0",
 )

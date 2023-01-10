@@ -18,3 +18,4 @@ class UserModel(Base):
 
     expenditures = relationship("ExpenditureModel", back_populates="owner")
     expenditures_day_stats = relationship("ExpendituresDayStat", back_populates="owner")
+    limits = relationship("LimitModel", back_populates="owner")

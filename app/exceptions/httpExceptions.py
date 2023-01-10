@@ -16,6 +16,10 @@ permission_denied_error = HTTPException(status_code=403, detail="Permissions den
 # 404
 user_not_found_error = HTTPException(status_code=404, detail="User not found")
 expenditure_not_found = HTTPException(status_code=404, detail="Expenditure not found")
+limit_not_found = HTTPException(status_code=404, detail="Limit not found")
+
+# 409
+cannot_update_limit_unique_month = HTTPException(status_code=409, detail="Cannot change month limit because it is used in given year.")
 
 # 422
 validation_error = HTTPException(status_code=422, detail="Validation error")

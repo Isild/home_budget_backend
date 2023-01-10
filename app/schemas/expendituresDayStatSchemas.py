@@ -42,3 +42,32 @@ class Pagination(BaseModel):
         title="The limit of displaying data",
         description="The limit of displaying data.",
     )
+
+class ExpendituresLimitBase(BaseModel):
+    total_cost: float = Field(
+        title="The total expenditures cost in whole month",
+        description="The total expenditures cost that user spent in whole month. It is sum of cost in all weeks.",
+        eq=0,
+        example=2137.00
+    )
+    year: int = Field(
+        title="The year",
+        description="The year.",
+        example=2023,
+        eq=0
+    )
+    total_limit: float = Field(
+        title="The total limit",
+        description="The total limit for year.",
+        eq=0,
+        example=20000.00
+    )
+    month_costs: list = Field(
+        title="The month costs with limits",
+        description="The month costs with limits.",
+        eq=0,
+        example=[{
+            "1":456.00,
+            "limit": 500.00
+        }]
+    )

@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from uuid import uuid4
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy import func
 
 from ..models import expendituresDayStatModel
 from ..schemas import expendituresDayStatSchemas
+from . import limitService
 
 model = expendituresDayStatModel.ExpendituresDayStat
 
@@ -88,3 +89,40 @@ def remove_expenditure_day_stat(db: Session, uuid: str) -> bool:
 def get_expenditure_day_stats_amount(db: Session, user_id: int = None) -> int:
     return db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost)\
         .label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id).with_entities(func.count()).scalar()
+
+def get_month_limit_data(db: Session, year: int = None, user_id: int = None):
+    if year is None:
+        year = datetime.now().year
+
+    date_from = str(year).zfill(4) + "-" + str(1).zfill(2) + "-01"
+    date_to = str(year).zfill(4) + "-" + str(12).zfill(2) + "-31"
+    expendiures_day_stats = get_expenditures_day_stats(db=db, user_id=user_id, page=1, limit=100, date_from=date_from, date_to=date_to, group_by="month")
+
+    month_list_limit = []
+    total_cost = 0
+    total_limit = 0
+    if year in expendiures_day_stats:
+        limitsDb = limitService.get_limits(db=db, year=year, user_id=user_id)
+
+        for month in expendiures_day_stats[year]:
+            total_cost += expendiures_day_stats[year][month]
+            limit = 0
+
+            for limitDb in limitsDb:
+                if month == limitDb.month:
+                    limit = limitDb.limit
+
+            month_list_limit.append({
+                month: round(expendiures_day_stats[year][month], 2),
+                "limit": limit
+            })
+
+        for limitDb in limitsDb:
+            total_limit += limitDb.limit
+
+    return {
+        "year": year,
+        "total_cost": round(total_cost, 2),
+        "total_limit": round(total_limit, 2),
+        "month_costs": month_list_limit
+    }

@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 # users
-@router.post("/", response_model=userSchemas.User, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=userSchemas.User, status_code=status.HTTP_201_CREATED, tags=["users"])
 def create_user(user: userSchemas.UserCreate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     loggedUser = authService.decode_token(db=db, token=token)
 

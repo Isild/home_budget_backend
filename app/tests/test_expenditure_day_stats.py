@@ -209,3 +209,100 @@ def test_show_expenditures_day_stats(test_db):
     assert "total_cost" in data
     assert "date" in data
     assert not "id" in data
+
+def test_index_expenditures_day_stats_limit(test_db):
+    expenditure1 = client.post(
+        version + "/expenditures/",
+        params={
+            "user_uuid":testUserAdmin.uuid
+        },
+        json={
+            "name":"name",
+            "cost":1.2,
+            "date":"2023-01-15",
+            "place":"place",
+            "type":"cyclical"
+        },
+        headers=authHeadersAdmin
+    ).json()
+    expenditure2 = client.post(
+        version + "/expenditures/",
+        params={
+            "user_uuid":testUserAdmin.uuid
+        },
+        json={
+            "name":"name",
+            "cost":1.2,
+            "date":"2023-01-01",
+            "place":"place",
+            "type":"cyclical"
+        },
+        headers=authHeadersAdmin
+    ).json()
+    expenditure3 = client.post(
+        version + "/expenditures/",
+        params={
+            "user_uuid":testUserAdmin.uuid
+        },
+        json={
+            "name":"name",
+            "cost":10.2,
+            "date":"2023-01-02",
+            "place":"place",
+            "type":"cyclical"
+        },
+        headers=authHeadersAdmin
+    ).json()
+    expenditure4 = client.post(
+        version + "/expenditures/",
+        params={
+            "user_uuid":testUserAdmin.uuid
+        },
+        json={
+            "name":"name",
+            "cost":100,
+            "date":"2023-02-02",
+            "place":"place",
+            "type":"cyclical"
+        },
+        headers=authHeadersAdmin
+    ).json()
+
+    limit1 = client.post(
+        version + "/limits/",
+        params={
+        },
+        json={
+            "year": 2023,
+            "month": 1,
+            "limit": 210.37
+        },
+        headers=authHeadersAdmin
+    )
+    limit2 = client.post(
+        version + "/limits/",
+        params={
+        },
+        json={
+            "year": 2023,
+            "month": 2,
+            "limit": 21.37
+        },
+        headers=authHeadersAdmin
+    )
+
+    response = client.get(
+        version + "/users/" + testUserAdmin.uuid + "/expenditures-day-stats/month-limit",
+        headers=authHeadersAdmin
+    )
+
+    assert response.status_code == 200
+    response = response.json()
+    assert response['total_cost'] == 112.60
+    assert response['year'] == 2023
+    assert response['total_limit'] == 231.74
+    assert response['month_costs'][0]["1"] == 12.60
+    assert response['month_costs'][0]["limit"] == 210.37
+    assert response['month_costs'][1]["2"] == 100
+    assert response['month_costs'][1]["limit"] == 21.37
+    
