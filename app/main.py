@@ -4,15 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 import time
 
 from .database import SessionLocal, engine
-from .schemas import userSchemas, expenditureSchemas, userTokenSchemas
-from .models import userModel, expenditureModel, limitsModel
+from .schemas import expenditure_schemas, user_schemas, user_token_schemas
+from .models import expenditure_model, limits_model, user_model
 from .routers import auth
-from .routers.v0 import users, expenditures, expenditureDayStats, limits
+from .routers.v0 import expenditure_day_stats, users, expenditures, limits
 from .dependencies import get_db
-from .services import authService
+from .services import auth_service
 from .config import cors
 
-userModel.Base.metadata.create_all(bind=engine)
+user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -50,7 +50,7 @@ app.include_router(
     prefix="/v0",
 )
 app.include_router(
-    expenditureDayStats.router,
+    expenditure_day_stats.router,
     prefix="/v0",
 )
 app.include_router(

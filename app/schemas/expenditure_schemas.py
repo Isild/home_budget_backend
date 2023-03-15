@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import date as date_type
 
-from ..models.expenditureModel import ExpenditureTypes
+from ..models.expenditure_model import ExpenditureTypes
 
 class ExpenditureBase(BaseModel):
     name: str = Field(

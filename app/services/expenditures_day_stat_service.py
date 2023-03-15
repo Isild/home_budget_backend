@@ -3,38 +3,38 @@ from uuid import uuid4
 from datetime import date, datetime
 from sqlalchemy import func
 
-from ..models import expendituresDayStatModel
-from ..schemas import expendituresDayStatSchemas
-from . import limitService
+from ..models import expenditures_day_stat_model
+from ..schemas import expenditures_day_stat_schemas
+from . import limit_service
 
-model = expendituresDayStatModel.ExpendituresDayStat
+model = expenditures_day_stat_model.ExpendituresDayStat
 
 def get_expenditures_day_stats(db: Session, user_id: int = None, page: int = 0, limit: int = 100, search: str = None, date_from: date = None, date_to: date = None, group_by: str = None):
     if group_by:
-        query = db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost).label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id)
+        query = db.query(expenditures_day_stat_model.ExpendituresDayStat.date, func.sum(expenditures_day_stat_model.ExpendituresDayStat.total_cost).label('total_cost')).filter(expenditures_day_stat_model.ExpendituresDayStat.owner_id== user_id)
     else:
-        query = db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id)
+        query = db.query(expenditures_day_stat_model.ExpendituresDayStat).filter(expenditures_day_stat_model.ExpendituresDayStat.owner_id== user_id)
 
-    query = query.order_by(expendituresDayStatModel.ExpendituresDayStat.date)
+    query = query.order_by(expenditures_day_stat_model.ExpendituresDayStat.date)
 
     if user_id:
-        query = query.filter(expendituresDayStatModel.ExpendituresDayStat.owner_id == user_id)
+        query = query.filter(expenditures_day_stat_model.ExpendituresDayStat.owner_id == user_id)
 
     # if search:
     #     query = query.filter(expendituresDayStatModel.ExpendituresDayStat.total_cost.match(search))
 
     if date_from:
-        query = query.filter(expendituresDayStatModel.ExpendituresDayStat.date >= date_from)
+        query = query.filter(expenditures_day_stat_model.ExpendituresDayStat.date >= date_from)
 
     if date_to:
-        query = query.filter(expendituresDayStatModel.ExpendituresDayStat.date <= date_to)
+        query = query.filter(expenditures_day_stat_model.ExpendituresDayStat.date <= date_to)
 
     if group_by:
         if group_by == "day":
-            query = query.group_by(expendituresDayStatModel.ExpendituresDayStat.date)
+            query = query.group_by(expenditures_day_stat_model.ExpendituresDayStat.date)
         elif group_by == "month" or group_by == "year":
-            query = query.group_by(expendituresDayStatModel.ExpendituresDayStat.date)
-            result = query.order_by(expendituresDayStatModel.ExpendituresDayStat.date).all()
+            query = query.group_by(expenditures_day_stat_model.ExpendituresDayStat.date)
+            result = query.order_by(expenditures_day_stat_model.ExpendituresDayStat.date).all()
 
             grouped_expenditures = {}
             for day in result:
@@ -55,19 +55,19 @@ def get_expenditures_day_stats(db: Session, user_id: int = None, page: int = 0, 
     return query.offset((page-1) * limit).limit(limit).all()
 
 def get_expenditure_day_stat(db: Session, uuid: str):
-    return db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.uuid == uuid).first()
+    return db.query(expenditures_day_stat_model.ExpendituresDayStat).filter(expenditures_day_stat_model.ExpendituresDayStat.uuid == uuid).first()
 
-def update_expenditure_day_stat(db: Session, expenditureDayStatDb: expendituresDayStatModel.ExpendituresDayStat, expenditureDayStat: expendituresDayStatSchemas.ExpendituresDayStat) -> bool:
-    db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.id == expenditureDayStatDb.id).update(expenditureDayStat.dict())
+def update_expenditure_day_stat(db: Session, expenditureDayStatDb: expenditures_day_stat_model.ExpendituresDayStat, expenditureDayStat: expenditures_day_stat_schemas.ExpendituresDayStat) -> bool:
+    db.query(expenditures_day_stat_model.ExpendituresDayStat).filter(expenditures_day_stat_model.ExpendituresDayStat.id == expenditureDayStatDb.id).update(expenditureDayStat.dict())
     db.commit()
     db.refresh(expenditureDayStatDb)
 
     return expenditureDayStatDb
 
-def create_expenditure_day_stat(db: Session, expenditureDayStat: expendituresDayStatSchemas.ExpendituresDayStat, user_id: int):
+def create_expenditure_day_stat(db: Session, expenditureDayStat: expenditures_day_stat_schemas.ExpendituresDayStat, user_id: int):
     uuid = str(uuid4())
 
-    db_expenditure = expendituresDayStatModel.ExpendituresDayStat(**expenditureDayStat.dict(), owner_id=user_id, uuid=uuid)
+    db_expenditure = expenditures_day_stat_model.ExpendituresDayStat(**expenditureDayStat.dict(), owner_id=user_id, uuid=uuid)
 
     db.add(db_expenditure)
     db.commit()
@@ -76,7 +76,7 @@ def create_expenditure_day_stat(db: Session, expenditureDayStat: expendituresDay
     return db_expenditure
 
 def remove_expenditure_day_stat(db: Session, uuid: str) -> bool:
-    expenditure = db.query(expendituresDayStatModel.ExpendituresDayStat).filter(expendituresDayStatModel.ExpendituresDayStat.uuid == uuid).first()
+    expenditure = db.query(expenditures_day_stat_model.ExpendituresDayStat).filter(expenditures_day_stat_model.ExpendituresDayStat.uuid == uuid).first()
 
     if expenditure == None:
         return None
@@ -87,8 +87,8 @@ def remove_expenditure_day_stat(db: Session, uuid: str) -> bool:
     return uuid
 
 def get_expenditure_day_stats_amount(db: Session, user_id: int = None) -> int:
-    return db.query(expendituresDayStatModel.ExpendituresDayStat.date, func.sum(expendituresDayStatModel.ExpendituresDayStat.total_cost)\
-        .label('total_cost')).filter(expendituresDayStatModel.ExpendituresDayStat.owner_id== user_id).with_entities(func.count()).scalar()
+    return db.query(expenditures_day_stat_model.ExpendituresDayStat.date, func.sum(expenditures_day_stat_model.ExpendituresDayStat.total_cost)\
+        .label('total_cost')).filter(expenditures_day_stat_model.ExpendituresDayStat.owner_id== user_id).with_entities(func.count()).scalar()
 
 def get_month_limit_data(db: Session, year: int = None, user_id: int = None):
     if year is None:
@@ -102,7 +102,7 @@ def get_month_limit_data(db: Session, year: int = None, user_id: int = None):
     total_cost = 0
     total_limit = 0
     if year in expendiures_day_stats:
-        limitsDb = limitService.get_limits(db=db, year=year, user_id=user_id)
+        limitsDb = limit_service.get_limits(db=db, year=year, user_id=user_id)
 
         for month in expendiures_day_stats[year]:
             total_cost += expendiures_day_stats[year][month]

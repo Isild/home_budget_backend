@@ -5,8 +5,8 @@ from jose import jwt
 from datetime import datetime, timedelta
 from fastapi import Depends
 
-from ..models import userModel
-from . import userService
+from ..models import user_model
+from . import user_service
 from ..dependencies import oauth2_scheme, get_db, get_settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -36,26 +36,26 @@ def get_hashed_password(password: str):
     return __hash_password(password=password)
 
 def decode_token(db: Session, token: str):
-    user = userService.get_user_by_token(db=db,token=token)
+    user = user_service.get_user_by_token(db=db,token=token)
 
     if not user:
         return None
     
     return user
 
-def check_is_user_active(user: userModel.UserModel):
+def check_is_user_active(user: user_model.UserModel):
     if user.is_active:
         return user
     else:
         return None
 
-def check_user_password_hash(user: userModel.UserModel, password: str):
+def check_user_password_hash(user: user_model.UserModel, password: str):
     if __hash_password(password=user.password) == __hash_password(password=password):
         return True
     else:
         return False
 
-def authenticate_user(db: Session, user: userModel.UserModel, password: str):
+def authenticate_user(db: Session, user: user_model.UserModel, password: str):
     if not user:
         return False
     if not __verify_password(password=password, hashed_password=user.password):
@@ -63,14 +63,14 @@ def authenticate_user(db: Session, user: userModel.UserModel, password: str):
     
     return user
 
-def generate_user_token(db: Session, user: userModel.UserModel):
+def generate_user_token(db: Session, user: user_model.UserModel):
     access_token_expires = timedelta(minutes=get_settings().access_token_expire_minutes)
 
     token = __create_access_token(
         data = {"sub": user.email}, expires_delta=access_token_expires
     )
 
-    db.query(userModel.UserModel).filter(userModel.UserModel.id == user.id).update({"token": token})
+    db.query(user_model.UserModel).filter(user_model.UserModel.id == user.id).update({"token": token})
     db.commit()
     db.refresh(user)
 
@@ -79,7 +79,7 @@ def generate_user_token(db: Session, user: userModel.UserModel):
 async def get_current_active_user(token: str = Depends(oauth2_scheme)):
 # async def get_current_active_user(request: Request = Depends(Request), token: str = Depends(oauth2_scheme)):
     db = next(get_db())
-    user = userService.get_current_user(db=db, token=token)
+    user = user_service.get_current_user(db=db, token=token)
     
     return user
 
@@ -89,5 +89,5 @@ async def get_current_active_user(token: str = Depends(oauth2_scheme)):
         
 #     return get_current_active_user()
 
-def delete_token(db: Session, user: userModel.UserModel):
-    userService.remove_user_token(db=db, user=user)
+def delete_token(db: Session, user: user_model.UserModel):
+    user_service.remove_user_token(db=db, user=user)

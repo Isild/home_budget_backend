@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel, Field
 
-from .expenditureSchemas import Expenditure
+from .expenditure_schemas import Expenditure
 
 class UserBase(BaseModel):
     email: str
@@ -18,7 +18,6 @@ class UserCreate(UserRegister):
 
 class UserPublic(UserBase):
     uuid: str
-    is_active: bool
     is_active: bool
     disabled: bool
 

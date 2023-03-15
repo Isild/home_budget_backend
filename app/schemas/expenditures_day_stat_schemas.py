@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel, Field
 from datetime import date as date_type
 
-from ..models.expendituresDayStatModel import ExpendituresDayStat
+from ..models.expenditures_day_stat_model import ExpendituresDayStat
 
 class ExpendituresDayStatBase(BaseModel):
     total_cost: float = Field(

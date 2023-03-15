@@ -5,10 +5,10 @@ from pytest import fixture
 from uuid import uuid4
 from fastapi.encoders import jsonable_encoder
 
-from ..models import userModel
+from ..models import user_model
 from ..database import Base
 from ..main import app, get_db
-from ..services import authService, userService
+from ..services import auth_service, user_service
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -51,17 +51,17 @@ def preper_to_test(db):
     global testUser, testUserAdmin, authHeaders, authHeadersAdmin
     # admin user
     adminEmail = "emailAdmin@email.com"
-    userAdmin = userService.get_user_by_email(db=db, email=adminEmail)
+    userAdmin = user_service.get_user_by_email(db=db, email=adminEmail)
     if userAdmin is None:
-        userAdmin = userModel.UserModel(email=adminEmail, password="hashed_password", uuid=str(uuid4()), is_active=True, is_admin=True, disabled=False)
+        userAdmin = user_model.UserModel(email=adminEmail, password="hashed_password", uuid=str(uuid4()), is_active=True, is_admin=True, disabled=False)
         db.add(userAdmin)
 
     # normal user
     userEmail = "email@email.com"
-    user = userService.get_user_by_email(db=db, email=userEmail)
+    user = user_service.get_user_by_email(db=db, email=userEmail)
 
     if user is None:
-        user = userModel.UserModel(email=userEmail, password="hashed_password", uuid=str(uuid4()), is_active=True, is_admin=False, disabled=False)
+        user = user_model.UserModel(email=userEmail, password="hashed_password", uuid=str(uuid4()), is_active=True, is_admin=False, disabled=False)
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -70,8 +70,8 @@ def preper_to_test(db):
     db.refresh(user)
     db.refresh(userAdmin)
 
-    authService.generate_user_token(db=db, user=user)
-    authService.generate_user_token(db=db, user=userAdmin)
+    auth_service.generate_user_token(db=db, user=user)
+    auth_service.generate_user_token(db=db, user=userAdmin)
 
     testUser = user
     testUserAdmin = userAdmin
